@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Grocery Shop</title>
+
+<style><script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #f2f2f2;
+}
+
+header {
+  background: #2e7d32;
+  color: white;
+  text-align: center;
+  padding: 15px;
+}
+
+.container {
+  padding: 10px;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.product {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.product img {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+}
+
+.qty {
+  width: 60px;
+  margin-top: 5px;
+}
+
+.form {
+  background: white;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+.cart {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: white;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+button {
+  background: #43a047;
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.whatsapp {
+  background: #25D366;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  🛒 My Grocery Shop
+  <p style="font-size:14px;">Call/WhatsApp: 077XXXXXXX</p>
+</header>
+
+<div class="container">
+
+<div class="products">
+
+<div class="product">
+<img src="https://via.placeholder.com/150">
+<h4>Rice 1kg</h4>
+<p>LKR 220</p>
+<input type="number" id="rice" class="qty" min="0" value="0">
+</div>
+
+<div class="product">
+<img src="https://via.placeholder.com/150">
+<h4>Sugar 1kg</h4>
+<p>LKR 250</p>
+<input type="number" id="sugar" class="qty" min="0" value="0">
+</div>
+
+<div class="product">
+<img src="https://via.placeholder.com/150">
+<h4>Milk Powder</h4>
+<p>LKR 980</p>
+<input type="number" id="milk" class="qty" min="0" value="0">
+</div>
+
+<div class="product">
+<img src="https://via.placeholder.com/150">
+<h4>Eggs (10)</h4>
+<p>LKR 420</p>
+<input type="number" id="eggs" class="qty" min="0" value="0">
+</div>
+
+</div>
+
+<div class="form">
+<h3>Customer Details</h3>
+
+<input type="text" id="name" placeholder="Your Name">
+<input type="text" id="phone" placeholder="Phone Number">
+<input type="text" id="address" placeholder="Delivery Address">
+
+<select id="area">
+<option value="">Select Area</option>
+<option value="Colombo">Colombo (LKR 150)</option>
+<option value="Suburb">Suburb (LKR 250)</option>
+</select>
+
+</div>
+
+</div>
+
+<div class="cart">
+<div><strong>Total: </strong><span id="total">LKR 0</span></div>
+<button class="whatsapp" onclick="order()">Order via WhatsApp</button>
+</div>
+
+<script>
+function order() {
+let items = [];
+let total = 0;
+
+// products
+let rice = document.getElementById("rice").value;
+let sugar = document.getElementById("sugar").value;
+let milk = document.getElementById("milk").value;
+let eggs = document.getElementById("eggs").value;
+
+// add items
+if (rice > 0) { items.push(`Rice x ${rice}`); total += rice * 220; }
+if (sugar > 0) { items.push(`Sugar x ${sugar}`); total += sugar * 250; }
+if (milk > 0) { items.push(`Milk x ${milk}`); total += milk * 980; }
+if (eggs > 0) { items.push(`Eggs x ${eggs}`); total += eggs * 420; }
+
+// customer
+let name = document.getElementById("name").value;
+let phone = document.getElementById("phone").value;
+let address = document.getElementById("address").value;
+let area = document.getElementById("area").value;
+
+// validation
+if (!name || !phone || !address || !area) {
+  alert("Please fill all details");
+  return;
+}
+
+// delivery fee
+let delivery = area === "Colombo" ? 150 : 250;
+total += delivery;
+
+// message
+let msg = "🛒 Grocery Order%0A%0A";
+msg += items.join("%0A");
+msg += `%0A%0ADelivery: LKR ${delivery}`;
+msg += `%0ATotal: LKR ${total}`;
+msg += `%0A%0AName: ${name}`;
+msg += `%0APhone: ${phone}`;
+msg += `%0AAddress: ${address}`;
+
+// your number
+let shopPhone = "947XXXXXXXX";
+
+window.open(`https://wa.me/${shopPhone}?text=${msg}`, "_blank");
+}
+</script>
+
+</body>
+</html>
