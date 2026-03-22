@@ -13,7 +13,7 @@ header { background: #2e7d32; color: white; text-align: center; padding: 15px; }
 .container { padding: 10px; }
 .products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .product { background: white; padding: 10px; border-radius: 10px; text-align: center; }
-.product img { width: 100%; height: 120px; border-radius: 8px; }
+.product img { width: 100%; height: 120px; border-radius: 8px; object-fit: cover; }
 .qty { width: 60px; margin-top: 5px; }
 .form { background: white; padding: 10px; margin-top: 10px; border-radius: 10px; }
 input, select { width: 100%; padding: 8px; margin-top: 5px; }
@@ -32,8 +32,10 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 
 <div class="container">
 
-<div class="products" id="productList"></div>
+<!-- Products -->
+<div class="products" id="productList">Loading products...</div>
 
+<!-- Customer Details -->
 <div class="form">
 <h3>Customer Details</h3>
 <input type="text" id="name" placeholder="Your Name">
@@ -47,6 +49,7 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 </select>
 </div>
 
+<!-- Payment -->
 <div class="form">
 <h3>Payment Method</h3>
 <select id="payment">
@@ -63,27 +66,24 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 
 </div>
 
+<!-- Cart -->
 <div class="cart">
 <button class="whatsapp" onclick="order()">Order via WhatsApp</button>
 </div>
 
 <script>
-
-// ✅ FIXED CSV LINK (VERY IMPORTANT)
+// ✅ Use proper CSV link (output=csv)
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?output=csv";
 
-// ✅ Load products safely
+// Load products
 fetch(sheetURL)
 .then(res => res.text())
 .then(data => {
-
   let rows = data.trim().split("\n").slice(1);
   let html = "";
-
   rows.forEach(row => {
-
+    // Safe CSV split
     let cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-
     if(cols.length < 3) return;
 
     let name = cols[0].replace(/"/g, "");
@@ -100,33 +100,29 @@ fetch(sheetURL)
   });
 
   document.getElementById("productList").innerHTML = html;
-
 })
 .catch(() => {
   document.getElementById("productList").innerHTML =
     "<p>⚠️ Failed to load products</p>";
 });
 
-
-// 🛒 Order function
+// Order function
 function order() {
-
   let items = [];
   let total = 0;
 
   document.querySelectorAll(".product").forEach(p => {
-
     let name = p.querySelector("h4").innerText;
     let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
     let qty = parseInt(p.querySelector(".qty").value) || 0;
 
-    if (qty > 0) {
+    if(qty > 0){
       items.push(`${name} x ${qty}`);
       total += price * qty;
     }
   });
 
-  if (items.length === 0) {
+  if(items.length === 0){
     alert("Please select at least one item");
     return;
   }
@@ -137,13 +133,13 @@ function order() {
   let area = document.getElementById("area").value;
   let payment = document.getElementById("payment").value;
 
-  if (!cname || !cphone || !caddr || !area) {
+  if(!cname || !cphone || !caddr || !area){
     alert("Please fill all details");
     return;
   }
 
-  if (!/^\d{10}$/.test(cphone)) {
-    alert("Enter valid phone number");
+  if(!/^\d{10}$/.test(cphone)){
+    alert("Enter valid 10-digit phone number");
     return;
   }
 
@@ -163,14 +159,12 @@ Phone: ${cphone}
 Address: ${caddr}`;
 
   let encodedMsg = encodeURIComponent(msg);
-
   let shopPhone = "94772054791";
 
   window.open(`https://wa.me/${shopPhone}?text=${encodedMsg}`, "_blank");
 }
 
-
-// 💳 Payment toggle
+// Payment toggle
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("payment").addEventListener("change", function(){
     document.getElementById("bankDetails").style.display =
@@ -178,12 +172,10 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-
-// ⚙️ Service worker
+// Service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
-
 </script>
 
 </body>
