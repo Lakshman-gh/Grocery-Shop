@@ -32,10 +32,10 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 
 <div class="container">
 
-<!-- ✅ PRODUCTS FROM GOOGLE SHEETS -->
+<!-- Products from sheet -->
 <div class="products" id="productList"></div>
 
-<!-- CUSTOMER -->
+<!-- Customer -->
 <div class="form">
 <h3>Customer Details</h3>
 <input type="text" id="name" placeholder="Your Name">
@@ -49,10 +49,9 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 </select>
 </div>
 
-<!-- PAYMENT -->
+<!-- Payment -->
 <div class="form">
 <h3>Payment Method</h3>
-
 <select id="payment">
 <option value="COD">Cash on Delivery</option>
 <option value="Bank">Bank Transfer</option>
@@ -67,16 +66,17 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 
 </div>
 
-<!-- CART -->
+<!-- Cart -->
 <div class="cart">
 <button class="whatsapp" onclick="order()">Order via WhatsApp</button>
 </div>
 
 <script>
 
-// 🔗 🔥 PASTE YOUR GOOGLE SHEET LINK HERE
-const sheetURL = "https://docs.google.com/spreadsheets/d/1311JoMncixNh1KSfA7K9nfyBHnIClFpBXBLo-mpU_lk/edit?usp=drivesdk";
+// 📄 Your Google Sheet CSV link (must be published)
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/1311JoMncixNh1KSfA7K9nfyBHnIClFpBXBLo-mpU_lk/pub?output=csv";
 
+// Load products from sheet
 fetch(sheetURL)
 .then(res => res.text())
 .then(data => {
@@ -99,68 +99,66 @@ fetch(sheetURL)
   document.getElementById("productList").innerHTML = html;
 });
 
-// 🛒 DYNAMIC ORDER
+// 🛒 Ordering function (dynamic)
 function order() {
-let items = [];
-let total = 0;
+  let items = [];
+  let total = 0;
 
-let products = document.querySelectorAll(".product");
+  let products = document.querySelectorAll(".product");
+  products.forEach(p => {
+    let name = p.querySelector("h4").innerText;
+    let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
+    let qty = p.querySelector(".qty").value;
 
-products.forEach(p => {
-  let name = p.querySelector("h4").innerText;
-  let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
-  let qty = p.querySelector(".qty").value;
+    if (qty > 0) {
+      items.push(`${name} x ${qty}`);
+      total += price * qty;
+    }
+  });
 
-  if (qty > 0) {
-    items.push(`${name} x ${qty}`);
-    total += price * qty;
+  if (items.length === 0) {
+    alert("Please select at least one item");
+    return;
   }
-});
 
-if (items.length === 0) {
-  alert("Please select items");
-  return;
-}
+  let cname = document.getElementById("name").value;
+  let cphone = document.getElementById("phone").value;
+  let caddr = document.getElementById("address").value;
+  let area = document.getElementById("area").value;
+  let payment = document.getElementById("payment").value;
 
-let name = document.getElementById("name").value;
-let phone = document.getElementById("phone").value;
-let address = document.getElementById("address").value;
-let area = document.getElementById("area").value;
-let payment = document.getElementById("payment").value;
+  if (!cname || !cphone || !caddr || !area) {
+    alert("Please fill all details");
+    return;
+  }
 
-if (!name || !phone || !address || !area) {
-  alert("Fill all details");
-  return;
-}
+  let delivery = area === "Colombo" ? 150 : 250;
+  total += delivery;
 
-let delivery = area === "Colombo" ? 150 : 250;
-total += delivery;
+  let msg = "🛒 Grocery Order%0A%0A";
+  msg += items.join("%0A");
+  msg += `%0A%0ADelivery: LKR ${delivery}`;
+  msg += `%0ATotal: LKR ${total}`;
+  msg += `%0APayment: ${payment}`;
+  msg += `%0A%0AName: ${cname}`;
+  msg += `%0APhone: ${cphone}`;
+  msg += `%0AAddress: ${caddr}`;
 
-let msg = "🛒 Grocery Order%0A%0A";
-msg += items.join("%0A");
-msg += `%0A%0ADelivery: LKR ${delivery}`;
-msg += `%0ATotal: LKR ${total}`;
-msg += `%0APayment: ${payment}`;
-msg += `%0A%0AName: ${name}`;
-msg += `%0APhone: ${phone}`;
-msg += `%0AAddress: ${address}`;
-
-let shopPhone = "94772054791";
-
-window.open(`https://wa.me/${shopPhone}?text=${msg}`, "_blank");
+  let shopPhone = "94772054791";
+  window.open(`https://wa.me/${shopPhone}?text=${msg}`, "_blank");
 }
 
 // payment toggle
 document.addEventListener("DOMContentLoaded", function() {
-document.getElementById("payment").addEventListener("change", function(){
-document.getElementById("bankDetails").style.display =
-this.value === "Bank" ? "block" : "none";
-});
+  document.getElementById("payment").addEventListener("change", function(){
+    document.getElementById("bankDetails").style.display =
+      this.value === "Bank" ? "block" : "none";
+  });
 });
 
 // service worker
 if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('sw.js');
+  navigator.serviceWorker.register('sw.js');
 }
 
 </script>
