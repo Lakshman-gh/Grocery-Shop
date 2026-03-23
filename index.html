@@ -7,27 +7,157 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body { font-family: Arial; margin: 0; background: #f2f2f2; }
-header { background: #2e7d32; color: white; text-align: center; padding: 15px; }
-.container { padding: 10px; }
-.products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.product { background: white; padding: 10px; border-radius: 10px; text-align: center; }
-.product img { width: 100%; height: 120px; border-radius: 8px; object-fit: cover; }
-.form { background: white; padding: 10px; margin-top: 10px; border-radius: 10px; }
-input, select { width: 100%; padding: 8px; margin-top: 5px; }
-.cart { position: fixed; bottom: 0; width: 100%; background: white; padding: 10px; border-top: 1px solid #ccc; }
-button { background: #43a047; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; margin-top: 5px; }
-.whatsapp { background: #25D366; }
-.qty-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 8px; }
-.qty-box button { width: 30px; height: 30px; font-size: 18px; border-radius: 50%; background: #2e7d32; color:white; border:none; }
-.qty-box span { font-size: 16px; width: 20px; text-align: center; }
-#bankDetails { display: none; background: #f1f1f1; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; }
-#previewModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; }
-#previewContent { background:white; padding:15px; border-radius:10px; width:90%; max-width:400px; max-height:80%; overflow:auto; }
-#previewContent h3 { text-align:center; margin-top:0; }
-#closePreview { background:#d32f2f; margin-top:10px; }
+/* ----------------- Layout & Scroll Fix ----------------- */
+html, body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth scroll for mobile */
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body { font-family: Arial; background: #f2f2f2; }
+
+.container {
+  padding: 10px;
+  padding-bottom: 180px; /* space for fixed cart so scrolling works */
+}
+
+/* ----------------- Header ----------------- */
+header { 
+  background: #2e7d32; 
+  color: white; 
+  text-align: center; 
+  padding: 15px; 
+}
+
+/* ----------------- Products ----------------- */
+.products { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 10px; 
+}
+
+.product { 
+  background: white; 
+  padding: 10px; 
+  border-radius: 10px; 
+  text-align: center; 
+}
+
+.product img { 
+  width: 100%; 
+  height: 120px; 
+  border-radius: 8px; 
+  object-fit: cover; 
+}
+
+/* ----------------- Quantity Box ----------------- */
+.qty-box { 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  gap: 10px; 
+  margin-top: 8px; 
+}
+
+.qty-box button { 
+  width: 30px; 
+  height: 30px; 
+  font-size: 18px; 
+  border-radius: 50%; 
+  background: #2e7d32; 
+  color: white; 
+  border: none; 
+}
+
+.qty-box span { 
+  font-size: 16px; 
+  width: 20px; 
+  text-align: center; 
+}
+
+/* ----------------- Forms ----------------- */
+.form { 
+  background: white; 
+  padding: 10px; 
+  margin-top: 10px; 
+  border-radius: 10px; 
+}
+
+input, select { 
+  width: 100%; 
+  padding: 8px; 
+  margin-top: 5px; 
+}
+
+/* ----------------- Bank Details ----------------- */
+#bankDetails { 
+  display: none; 
+  background: #f1f1f1; 
+  padding: 10px; 
+  border-radius: 8px; 
+  margin-top: 5px; 
+  font-size: 14px; 
+}
+
+/* ----------------- Cart ----------------- */
+.cart { 
+  position: fixed; 
+  bottom: 0; 
+  width: 100%; 
+  background: white; 
+  padding: 10px; 
+  border-top: 1px solid #ccc; 
+}
+
+button { 
+  background: #43a047; 
+  color: white; 
+  border: none; 
+  padding: 10px; 
+  width: 100%; 
+  border-radius: 5px; 
+  margin-top: 5px; 
+}
+
+.whatsapp { 
+  background: #25D366; 
+}
+
+/* ----------------- Modal Preview ----------------- */
+#previewModal { 
+  display:none; 
+  position:fixed; 
+  top:0; left:0; 
+  width:100%; height:100%; 
+  background:rgba(0,0,0,0.6); 
+  justify-content:center; 
+  align-items:center; 
+}
+
+#previewContent { 
+  background:white; 
+  padding:15px; 
+  border-radius:10px; 
+  width:90%; 
+  max-width:400px; 
+  max-height:80%; 
+  overflow:auto; 
+}
+
+#previewContent h3 { 
+  text-align:center; 
+  margin-top:0; 
+}
+
+#closePreview { 
+  background:#d32f2f; 
+  margin-top:10px; 
+}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -81,13 +211,12 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 </div>
 
 <script>
-// Google Sheet CSV URL
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?gid=0&single=true&output=csv";
 
 let cart = {};
 let productsData = [];
 
-// Load products
+// Load products from Google Sheet CSV
 fetch(sheetURL)
 .then(res => res.text())
 .then(data => {
@@ -124,7 +253,7 @@ function changeQty(index, change){
   updateTotal();
 }
 
-// Update total
+// Update total including delivery
 function updateTotal(){
   let total = 0;
   productsData.forEach((p,index)=>{
@@ -136,7 +265,7 @@ function updateTotal(){
   document.getElementById("total").innerText = "Total: LKR "+total;
 }
 
-// Payment toggle
+// Payment toggle & update total on area change
 document.addEventListener("DOMContentLoaded", function(){
   const payment = document.getElementById("payment");
   const bankDetails = document.getElementById("bankDetails");
