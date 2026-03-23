@@ -4,11 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Grocery Shop</title>
-
 <link rel="manifest" href="manifest.json">
 
 <style>
-
 /* Quantity buttons */
 .qty-box {
   display: flex;
@@ -54,6 +52,7 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
   padding: 10px;
   border-radius: 8px;
   margin-top: 5px;
+  font-size: 14px;
 }
 
 select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
@@ -88,7 +87,7 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 </div>
 
 <!-- Payment -->
-<div class="form">
+<div class="form" id="paymentSection">
 <h3>Payment Method</h3>
 <select id="payment">
 <option value="COD">Cash on Delivery</option>
@@ -108,7 +107,6 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 </div>
 
 <script>
-
 // Google Sheet CSV URL
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?gid=0&single=true&output=csv";
 
@@ -118,21 +116,17 @@ fetch(sheetURL)
 .then(data => {
   let rows = data.trim().split("\n").slice(1);
   let html = "";
-
   rows.forEach((row, index) => {
     let cols = row.split(",");
     if(cols.length < 3) return;
-
     let name = cols[0].trim();
     let price = parseInt(cols[1]);
     let image = cols[2].trim();
-
     html += `
     <div class="product">
       <img src="${image}" onerror="this.src='images/rice.jpg'">
       <h4>${name}</h4>
       <p>LKR ${price}</p>
-
       <div class="qty-box">
         <button onclick="changeQty(${index}, -1)">−</button>
         <span id="qty-${index}">0</span>
@@ -140,7 +134,6 @@ fetch(sheetURL)
       </div>
     </div>`;
   });
-
   document.getElementById("productList").innerHTML = html;
 });
 
@@ -152,7 +145,6 @@ function changeQty(index, change) {
   if (!cart[index]) cart[index] = 0;
   cart[index] += change;
   if (cart[index] < 0) cart[index] = 0;
-
   document.getElementById(`qty-${index}`).innerText = cart[index];
   updateTotal();
 }
@@ -169,29 +161,22 @@ function updateTotal() {
   document.getElementById("total").innerText = "Total: LKR " + total;
 }
 
-// Toggle bank details for mobile
-document.addEventListener("DOMContentLoaded", function () {
+// Toggle bank details reliably on mobile
+window.onload = function() {
   const payment = document.getElementById("payment");
   const bankDetails = document.getElementById("bankDetails");
-
-  function toggleBankDetails() {
-    if (payment.value === "Bank") {
-      bankDetails.style.display = "block";
-    } else {
-      bankDetails.style.display = "none";
-    }
+  function toggleBank() {
+    bankDetails.style.display = payment.value === "Bank" ? "block" : "none";
   }
+  toggleBank();
+  payment.addEventListener("change", toggleBank);
+};
 
-  toggleBankDetails();
-  payment.addEventListener("change", toggleBankDetails);
-});
-
-// Order function
+// Order function with bank details in WhatsApp
 function order() {
   let items = [];
   let total = 0;
   let products = document.querySelectorAll(".product");
-
   products.forEach((p, index) => {
     let qty = cart[index] || 0;
     if (qty > 0) {
@@ -202,10 +187,7 @@ function order() {
     }
   });
 
-  if (items.length === 0) {
-    alert("Select items first");
-    return;
-  }
+  if (items.length === 0) { alert("Select items first"); return; }
 
   let cname = document.getElementById("name").value;
   let cphone = document.getElementById("phone").value;
@@ -213,10 +195,7 @@ function order() {
   let area = document.getElementById("area").value;
   let payment = document.getElementById("payment").value;
 
-  if (!cname || !cphone || !caddr || !area) {
-    alert("Fill all details");
-    return;
-  }
+  if (!cname || !cphone || !caddr || !area) { alert("Fill all details"); return; }
 
   let delivery = area === "Colombo" ? 150 : 250;
   total += delivery;
@@ -226,8 +205,7 @@ function order() {
   msg += `%0A%0ADelivery: LKR ${delivery}`;
   msg += `%0ATotal: LKR ${total}`;
 
-  // Include bank details if Bank Transfer
-  if (payment === "Bank") {
+  if(payment === "Bank") {
     msg += `%0A%0APayment: Bank Transfer`;
     msg += `%0ABank: Commercial Bank`;
     msg += `%0AAccount No: 1234567890`;
