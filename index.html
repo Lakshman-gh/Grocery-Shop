@@ -7,32 +7,6 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-/* Quantity buttons */
-.qty-box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.qty-box button {
-  width: 30px;
-  height: 30px;
-  font-size: 18px;
-  border-radius: 50%;
-  background: #2e7d32;
-  color: white;
-  border: none;
-}
-
-.qty-box span {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-}
-
-/* Basic UI */
 body { font-family: Arial; margin: 0; background: #f2f2f2; }
 header { background: #2e7d32; color: white; text-align: center; padding: 15px; }
 .container { padding: 10px; }
@@ -44,22 +18,16 @@ input, select { width: 100%; padding: 8px; margin-top: 5px; }
 .cart { position: fixed; bottom: 0; width: 100%; background: white; padding: 10px; border-top: 1px solid #ccc; }
 button { background: #43a047; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; margin-top: 5px; }
 .whatsapp { background: #25D366; }
-
-/* Bank Details box */
-#bankDetails {
-  display: none;
-  background: #f1f1f1;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 5px;
-  font-size: 14px;
-}
-
-select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
-
+.qty-box { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 8px; }
+.qty-box button { width: 30px; height: 30px; font-size: 18px; border-radius: 50%; background: #2e7d32; color:white; border:none; }
+.qty-box span { font-size: 16px; width: 20px; text-align: center; }
+#bankDetails { display: none; background: #f1f1f1; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; }
+#previewModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; }
+#previewContent { background:white; padding:15px; border-radius:10px; width:90%; max-width:400px; max-height:80%; overflow:auto; }
+#previewContent h3 { text-align:center; margin-top:0; }
+#closePreview { background:#d32f2f; margin-top:10px; }
 </style>
 </head>
-
 <body>
 
 <header>
@@ -69,16 +37,13 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 
 <div class="container">
 
-<!-- Products -->
 <div class="products" id="productList">Loading products...</div>
 
-<!-- Customer Details -->
 <div class="form">
 <h3>Customer Details</h3>
 <input type="text" id="name" placeholder="Your Name">
 <input type="text" id="phone" placeholder="Phone Number">
 <input type="text" id="address" placeholder="Delivery Address">
-
 <select id="area">
 <option value="">Select Area</option>
 <option value="Colombo">Colombo (LKR 150)</option>
@@ -86,8 +51,7 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 </select>
 </div>
 
-<!-- Payment -->
-<div class="form" id="paymentSection">
+<div class="form">
 <h3>Payment Method</h3>
 <select id="payment">
 <option value="COD">Cash on Delivery</option>
@@ -103,12 +67,25 @@ select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
 
 <div class="cart">
   <div id="total">Total: LKR 0</div>
-  <button class="whatsapp" onclick="order()">Order via WhatsApp</button>
+  <button class="whatsapp" onclick="previewOrder()">Preview Order</button>
+</div>
+
+<!-- Modal for preview -->
+<div id="previewModal">
+  <div id="previewContent">
+    <h3>Order Preview</h3>
+    <div id="previewItems"></div>
+    <button id="sendOrder" class="whatsapp">Send Order via WhatsApp</button>
+    <button id="closePreview">Close</button>
+  </div>
 </div>
 
 <script>
 // Google Sheet CSV URL
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?gid=0&single=true&output=csv";
+
+let cart = {};
+let productsData = [];
 
 // Load products
 fetch(sheetURL)
@@ -116,12 +93,13 @@ fetch(sheetURL)
 .then(data => {
   let rows = data.trim().split("\n").slice(1);
   let html = "";
-  rows.forEach((row, index) => {
+  rows.forEach((row,index) => {
     let cols = row.split(",");
     if(cols.length < 3) return;
     let name = cols[0].trim();
     let price = parseInt(cols[1]);
     let image = cols[2].trim();
+    productsData.push({name, price, image});
     html += `
     <div class="product">
       <img src="${image}" onerror="this.src='images/rice.jpg'">
@@ -137,82 +115,93 @@ fetch(sheetURL)
   document.getElementById("productList").innerHTML = html;
 });
 
-// Cart quantities
-let cart = {};
-
 // Change quantity
-function changeQty(index, change) {
-  if (!cart[index]) cart[index] = 0;
-  cart[index] += change;
-  if (cart[index] < 0) cart[index] = 0;
+function changeQty(index, change){
+  if(!cart[index]) cart[index]=0;
+  cart[index]+=change;
+  if(cart[index]<0) cart[index]=0;
   document.getElementById(`qty-${index}`).innerText = cart[index];
   updateTotal();
 }
 
 // Update total
-function updateTotal() {
+function updateTotal(){
   let total = 0;
-  let products = document.querySelectorAll(".product");
-  products.forEach((p, index) => {
-    let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
-    let qty = cart[index] || 0;
-    total += price * qty;
+  productsData.forEach((p,index)=>{
+    total += (cart[index]||0)*p.price;
   });
-  document.getElementById("total").innerText = "Total: LKR " + total;
+  let area = document.getElementById("area").value;
+  let delivery = (area==="Colombo"?150:(area==="Suburb"?250:0));
+  total += delivery;
+  document.getElementById("total").innerText = "Total: LKR "+total;
 }
 
-// Toggle bank details reliably on mobile
-window.onload = function() {
+// Payment toggle
+document.addEventListener("DOMContentLoaded", function(){
   const payment = document.getElementById("payment");
   const bankDetails = document.getElementById("bankDetails");
-  function toggleBank() {
-    bankDetails.style.display = payment.value === "Bank" ? "block" : "none";
-  }
+  const areaSelect = document.getElementById("area");
+
+  function toggleBank(){ bankDetails.style.display = payment.value==="Bank"?"block":"none"; }
   toggleBank();
   payment.addEventListener("change", toggleBank);
-};
+  areaSelect.addEventListener("change", updateTotal);
+});
 
-// Order function with bank details in WhatsApp
-function order() {
+// Preview order
+function previewOrder(){
   let items = [];
   let total = 0;
-  let products = document.querySelectorAll(".product");
-  products.forEach((p, index) => {
-    let qty = cart[index] || 0;
-    if (qty > 0) {
-      let name = p.querySelector("h4").innerText;
-      let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
-      items.push(`${name} x ${qty}`);
-      total += price * qty;
+  productsData.forEach((p,index)=>{
+    let qty = cart[index]||0;
+    if(qty>0){
+      items.push(`${p.name} x ${qty}`);
+      total += qty*p.price;
     }
   });
-
-  if (items.length === 0) { alert("Select items first"); return; }
-
   let cname = document.getElementById("name").value;
   let cphone = document.getElementById("phone").value;
   let caddr = document.getElementById("address").value;
   let area = document.getElementById("area").value;
   let payment = document.getElementById("payment").value;
-
-  if (!cname || !cphone || !caddr || !area) { alert("Fill all details"); return; }
-
-  let delivery = area === "Colombo" ? 150 : 250;
+  let delivery = (area==="Colombo"?150:(area==="Suburb"?250:0));
   total += delivery;
+
+  if(items.length===0 || !cname||!cphone||!caddr||!area){ alert("Fill all details and select items"); return; }
+
+  let previewHTML = items.map(i=>"<p>"+i+"</p>").join("");
+  previewHTML += `<p><strong>Delivery:</strong> LKR ${delivery}</p>`;
+  previewHTML += `<p><strong>Total:</strong> LKR ${total}</p>`;
+  previewHTML += `<p><strong>Payment:</strong> ${payment}</p>`;
+
+  document.getElementById("previewItems").innerHTML = previewHTML;
+  document.getElementById("previewModal").style.display="flex";
+
+  document.getElementById("sendOrder").onclick = function(){ sendOrder(items,total,delivery); };
+}
+
+document.getElementById("closePreview").onclick = function(){
+  document.getElementById("previewModal").style.display="none";
+}
+
+// Send order via WhatsApp
+function sendOrder(items,total,delivery){
+  let cname = document.getElementById("name").value;
+  let cphone = document.getElementById("phone").value;
+  let caddr = document.getElementById("address").value;
+  let payment = document.getElementById("payment").value;
 
   let msg = "🛒 Grocery Order%0A%0A";
   msg += items.join("%0A");
   msg += `%0A%0ADelivery: LKR ${delivery}`;
   msg += `%0ATotal: LKR ${total}`;
 
-  if(payment === "Bank") {
+  if(payment==="Bank"){
     msg += `%0A%0APayment: Bank Transfer`;
     msg += `%0ABank: Commercial Bank`;
     msg += `%0AAccount No: 1234567890`;
     msg += `%0AName: My Grocery Shop`;
-  } else {
-    msg += `%0A%0APayment: Cash on Delivery`;
-  }
+  } else { msg += `%0A%0APayment: Cash on Delivery`; }
 
   msg += `%0A%0AName: ${cname}`;
   msg += `%0APhone: ${cphone}`;
@@ -220,9 +209,8 @@ function order() {
 
   let shopPhone = "94772054791";
   window.open(`https://wa.me/${shopPhone}?text=${msg}`, "_blank");
+  document.getElementById("previewModal").style.display="none";
 }
-
 </script>
-
 </body>
 </html>
