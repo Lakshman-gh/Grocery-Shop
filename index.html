@@ -9,7 +9,8 @@
 
 <style>
 
-  .qty-box {
+/* Quantity buttons */
+.qty-box {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -23,6 +24,8 @@
   font-size: 18px;
   border-radius: 50%;
   background: #2e7d32;
+  color: white;
+  border: none;
 }
 
 .qty-box span {
@@ -31,19 +34,30 @@
   text-align: center;
 }
 
-  
+/* Basic UI */
 body { font-family: Arial; margin: 0; background: #f2f2f2; }
 header { background: #2e7d32; color: white; text-align: center; padding: 15px; }
 .container { padding: 10px; }
 .products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .product { background: white; padding: 10px; border-radius: 10px; text-align: center; }
 .product img { width: 100%; height: 120px; border-radius: 8px; object-fit: cover; }
-.qty { width: 60px; margin-top: 5px; }
 .form { background: white; padding: 10px; margin-top: 10px; border-radius: 10px; }
 input, select { width: 100%; padding: 8px; margin-top: 5px; }
 .cart { position: fixed; bottom: 0; width: 100%; background: white; padding: 10px; border-top: 1px solid #ccc; }
 button { background: #43a047; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; margin-top: 5px; }
 .whatsapp { background: #25D366; }
+
+/* Bank Details box */
+#bankDetails {
+  display: none;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 5px;
+}
+
+select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
+
 </style>
 </head>
 
@@ -81,7 +95,7 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 <option value="Bank">Bank Transfer</option>
 </select>
 
-<div id="bankDetails" style="display:none;">
+<div id="bankDetails">
 <p><strong>Bank:</strong> Commercial Bank</p>
 <p><strong>Account:</strong> 1234567890</p>
 <p><strong>Name:</strong> My Grocery Shop</p>
@@ -95,7 +109,7 @@ button { background: #43a047; color: white; border: none; padding: 10px; width: 
 
 <script>
 
-// ✅ Google Sheet CSV URL
+// Google Sheet CSV URL
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?gid=0&single=true&output=csv";
 
 // Load products
@@ -130,14 +144,13 @@ fetch(sheetURL)
   document.getElementById("productList").innerHTML = html;
 });
 
-// Store quantities
+// Cart quantities
 let cart = {};
 
 // Change quantity
 function changeQty(index, change) {
   if (!cart[index]) cart[index] = 0;
   cart[index] += change;
-
   if (cart[index] < 0) cart[index] = 0;
 
   document.getElementById(`qty-${index}`).innerText = cart[index];
@@ -148,21 +161,35 @@ function changeQty(index, change) {
 function updateTotal() {
   let total = 0;
   let products = document.querySelectorAll(".product");
-
   products.forEach((p, index) => {
     let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
     let qty = cart[index] || 0;
     total += price * qty;
   });
-
   document.getElementById("total").innerText = "Total: LKR " + total;
 }
+
+// Toggle bank details for mobile
+document.addEventListener("DOMContentLoaded", function () {
+  const payment = document.getElementById("payment");
+  const bankDetails = document.getElementById("bankDetails");
+
+  function toggleBankDetails() {
+    if (payment.value === "Bank") {
+      bankDetails.style.display = "block";
+    } else {
+      bankDetails.style.display = "none";
+    }
+  }
+
+  toggleBankDetails();
+  payment.addEventListener("change", toggleBankDetails);
+});
 
 // Order function
 function order() {
   let items = [];
   let total = 0;
-
   let products = document.querySelectorAll(".product");
 
   products.forEach((p, index) => {
@@ -170,7 +197,6 @@ function order() {
     if (qty > 0) {
       let name = p.querySelector("h4").innerText;
       let price = parseInt(p.querySelector("p").innerText.replace("LKR ",""));
-
       items.push(`${name} x ${qty}`);
       total += price * qty;
     }
@@ -199,7 +225,17 @@ function order() {
   msg += items.join("%0A");
   msg += `%0A%0ADelivery: LKR ${delivery}`;
   msg += `%0ATotal: LKR ${total}`;
-  msg += `%0APayment: ${payment}`;
+
+  // Include bank details if Bank Transfer
+  if (payment === "Bank") {
+    msg += `%0A%0APayment: Bank Transfer`;
+    msg += `%0ABank: Commercial Bank`;
+    msg += `%0AAccount No: 1234567890`;
+    msg += `%0AName: My Grocery Shop`;
+  } else {
+    msg += `%0A%0APayment: Cash on Delivery`;
+  }
+
   msg += `%0A%0AName: ${cname}`;
   msg += `%0APhone: ${cphone}`;
   msg += `%0AAddress: ${caddr}`;
