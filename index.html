@@ -229,7 +229,7 @@ fetch(sheetURL)
     let price = parseInt(cols[1]);
     let image = cols[2].trim();
     productsData.push({name, price, image});
-    html += 
+    html += `
     <div class="product">
       <img src="${image}" onerror="this.src='images/rice.jpg'">
       <h4>${name}</h4>
@@ -239,7 +239,7 @@ fetch(sheetURL)
         <span id="qty-${index}">0</span>
         <button onclick="changeQty(${index}, 1)">+</button>
       </div>
-    </div>;
+    </div>`;
   });
   document.getElementById("productList").innerHTML = html;
 });
@@ -249,7 +249,7 @@ function changeQty(index, change){
   if(!cart[index]) cart[index]=0;
   cart[index]+=change;
   if(cart[index]<0) cart[index]=0;
-  document.getElementById(qty-${index}).innerText = cart[index];
+  document.getElementById(`qty-${index}`).innerText = cart[index];
   updateTotal();
 }
 
@@ -284,7 +284,7 @@ function previewOrder(){
   productsData.forEach((p,index)=>{
     let qty = cart[index]||0;
     if(qty>0){
-      items.push(${p.name} x ${qty});
+      items.push(`${p.name} x ${qty}`);
       total += qty*p.price;
     }
   });
@@ -299,9 +299,9 @@ function previewOrder(){
   if(items.length===0 || !cname||!cphone||!caddr||!area){ alert("Fill all details and select items"); return; }
 
   let previewHTML = items.map(i=>"<p>"+i+"</p>").join("");
-  previewHTML += <p><strong>Delivery:</strong> LKR ${delivery}</p>;
-  previewHTML += <p><strong>Total:</strong> LKR ${total}</p>;
-  previewHTML += <p><strong>Payment:</strong> ${payment}</p>;
+  previewHTML += `<p><strong>Delivery:</strong> LKR ${delivery}</p>`;
+  previewHTML += `<p><strong>Total:</strong> LKR ${total}</p>`;
+  previewHTML += `<p><strong>Payment:</strong> ${payment}</p>`;
 
   document.getElementById("previewItems").innerHTML = previewHTML;
   document.getElementById("previewModal").style.display="flex";
@@ -322,22 +322,22 @@ function sendOrder(items,total,delivery){
 
   let msg = "🛒 Grocery Order%0A%0A";
   msg += items.join("%0A");
-  msg += %0A%0ADelivery: LKR ${delivery};
-  msg += %0ATotal: LKR ${total};
+  msg += `%0A%0ADelivery: LKR ${delivery}`;
+  msg += `%0ATotal: LKR ${total}`;
 
   if(payment==="Bank"){
-    msg += %0A%0APayment: Bank Transfer;
-    msg += %0ABank: Commercial Bank;
-    msg += %0AAccount No: 1234567890;
-    msg += %0AName: My Grocery Shop;
-  } else { msg += %0A%0APayment: Cash on Delivery; }
+    msg += `%0A%0APayment: Bank Transfer`;
+    msg += `%0ABank: Commercial Bank`;
+    msg += `%0AAccount No: 1234567890`;
+    msg += `%0AName: My Grocery Shop`;
+  } else { msg += `%0A%0APayment: Cash on Delivery`; }
 
-  msg += %0A%0AName: ${cname};
-  msg += %0APhone: ${cphone};
-  msg += %0AAddress: ${caddr};
+  msg += `%0A%0AName: ${cname}`;
+  msg += `%0APhone: ${cphone}`;
+  msg += `%0AAddress: ${caddr}`;
 
   let shopPhone = "94772054791";
-  window.open(https://wa.me/${shopPhone}?text=${msg}, "_blank");
+  window.open(`https://wa.me/${shopPhone}?text=${msg}`, "_blank");
   document.getElementById("previewModal").style.display="none";
 }
 </script>
