@@ -1,17 +1,3 @@
-<script>
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQ6YvbWgmfz-rYvO5f-Xc7QMavzije_aGv9GiK7R4Qc2RvkMsdOyTvj8g23sTBxgok0Hp5oGD8vYg7/pub?gid=0&single=true&output=csv";
-
-let cart = JSON.parse(localStorage.getItem("cart")) || {};
-let productsData = [];
-
-// ✅ Better CSV parser (handles commas inside quotes)
-function parseCSVRow(row) {
-  return row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col =>
-    col.replace(/^"|"$/g, '').trim()
-  );
-}
-
-// Load products
 fetch(sheetURL)
 .then(res => res.text())
 .then(data => {
@@ -19,11 +5,12 @@ fetch(sheetURL)
   let html = "";
 
   rows.forEach((row,index) => {
-    let cols = parseCSVRow(row);
+    let cols = row.split(",");
+
     if(cols.length < 3) return;
 
     let name = cols[0];
-    let price = parseInt(cols[1]);
+    let price = parseInt(cols[1]) || 0;
     let image = cols[2];
 
     productsData.push({name, price, image});
@@ -43,135 +30,8 @@ fetch(sheetURL)
 
   document.getElementById("productList").innerHTML = html;
   updateTotal();
+})
+.catch(err => {
+  console.error("Error loading products:", err);
+  document.getElementById("productList").innerHTML = "⚠️ Failed to load products";
 });
-
-// Change quantity
-function changeQty(index, change){
-  if(!cart[index]) cart[index]=0;
-
-  cart[index]+=change;
-  if(cart[index]<0) cart[index]=0;
-
-  document.getElementById(`qty-${index}`).innerText = cart[index];
-
-  // ✅ Save cart
-  localStorage.setItem("cart", JSON.stringify(cart));
-
-  updateTotal();
-}
-
-// Update total
-function updateTotal(){
-  let total = 0;
-
-  productsData.forEach((p,index)=>{
-    total += (cart[index]||0)*p.price;
-  });
-
-  let area = document.getElementById("area").value;
-  let delivery = (area==="Colombo"?150:(area==="Suburb"?250:0));
-  total += delivery;
-
-  document.getElementById("total").innerText = "Total: LKR "+total;
-
-  // ✅ Disable button if empty cart
-  const btn = document.querySelector(".whatsapp");
-  let hasItems = Object.values(cart).some(q => q > 0);
-  btn.disabled = !hasItems;
-}
-
-// Payment + area change
-document.addEventListener("DOMContentLoaded", function(){
-  const payment = document.getElementById("payment");
-  const bankDetails = document.getElementById("bankDetails");
-  const areaSelect = document.getElementById("area");
-
-  function toggleBank(){
-    bankDetails.style.display = payment.value==="Bank"?"block":"none";
-  }
-
-  toggleBank();
-  payment.addEventListener("change", toggleBank);
-  areaSelect.addEventListener("change", updateTotal);
-});
-
-// Preview order
-function previewOrder(){
-  let items = [];
-  let total = 0;
-
-  productsData.forEach((p,index)=>{
-    let qty = cart[index]||0;
-    if(qty>0){
-      items.push(`${p.name} x ${qty}`);
-      total += qty*p.price;
-    }
-  });
-
-  let cname = document.getElementById("name").value.trim();
-  let cphone = document.getElementById("phone").value.trim();
-  let caddr = document.getElementById("address").value.trim();
-  let area = document.getElementById("area").value;
-  let payment = document.getElementById("payment").value;
-
-  let delivery = (area==="Colombo"?150:(area==="Suburb"?250:0));
-  total += delivery;
-
-  // ✅ Validation
-  if(items.length===0 || !cname || !cphone || !caddr || !area){
-    alert("Fill all details and select items");
-    return;
-  }
-
-  // ✅ Phone validation (Sri Lanka)
-  if(!/^07\d{8}$/.test(cphone)){
-    alert("Enter valid Sri Lankan phone number (07XXXXXXXX)");
-    return;
-  }
-
-  let previewHTML = items.map(i=>"<p>"+i+"</p>").join("");
-  previewHTML += `<p><strong>Delivery:</strong> LKR ${delivery}</p>`;
-  previewHTML += `<p><strong>Total:</strong> LKR ${total}</p>`;
-  previewHTML += `<p><strong>Payment:</strong> ${payment}</p>`;
-
-  document.getElementById("previewItems").innerHTML = previewHTML;
-  document.getElementById("previewModal").style.display="flex";
-
-  document.getElementById("sendOrder").onclick = function(){
-    sendOrder(items,total,delivery);
-  };
-}
-
-// Close preview
-document.getElementById("closePreview").onclick = function(){
-  document.getElementById("previewModal").style.display="none";
-}
-
-// Send WhatsApp
-function sendOrder(items,total,delivery){
-  let cname = document.getElementById("name").value;
-  let cphone = document.getElementById("phone").value;
-  let caddr = document.getElementById("address").value;
-  let payment = document.getElementById("payment").value;
-
-  // ✅ Clean message + proper encoding
-  let msg = `🛒 Grocery Order
-
-${items.join("\n")}
-
-Delivery: LKR ${delivery}
-Total: LKR ${total}
-
-Payment: ${payment}
-
-Name: ${cname}
-Phone: ${cphone}
-Address: ${caddr}`;
-
-  let shopPhone = "94772054791";
-
-  window.open(`https://wa.me/${shopPhone}?text=${encodeURIComponent(msg)}`, "_blank");
-
-  document.getElementById("previewModal").style.display="none";
-}
-</script>
